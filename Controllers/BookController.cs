@@ -1,6 +1,6 @@
-﻿using BookStore.Models.Context;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using BookStore.Models;
+using BookStore.Interfaces;
 
 namespace BookStore.Controllers
 {
@@ -8,79 +8,69 @@ namespace BookStore.Controllers
     [ApiController]
     public class BookController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IBookRepository _bookRepository;
 
-        public BookController(ApplicationDbContext context)
+        public BookController(IBookRepository bookRepository)
         {
-            _context = context;
+            _bookRepository = bookRepository;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var books = _context.Book.ToList();
+            var books = await _bookRepository.GetAllAsync();
 
             return Ok(books);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var book = _context.Book.Find(id);
+            var book = await _bookRepository.GetByIdAsync(id);
 
             if (book == null)
             {
-                return NotFound();
+                return null;
             }
 
             return Ok(book);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] BookModel bookRequest)
+        public async Task<IActionResult> Create([FromBody] BookModel bookRequest)
         {
             var book = bookRequest;
 
-            _context.Book.Add(book);
-            _context.SaveChanges();
+            await _bookRepository.CreateAsync(book);
 
             return CreatedAtAction(nameof(GetById), new { id = book.Id }, book);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] BookModel bookRequest)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] BookModel bookRequest)
         {
-            var book = _context.Book.Find(id);
+            var book = await _bookRepository.UpdateAsync(id, bookRequest);
 
             if (book == null)
             {
                 return NotFound();
             }
-
-            book.Name = bookRequest.Name;
-            book.IdAuthor = bookRequest.IdAuthor;
-            book.Price = bookRequest.Price;
-
-            _context.SaveChanges();
 
             return Ok(book);
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult DeleteById([FromRoute] int id) {  
-            var book = _context.Book.Find(id);
+        public async Task<IActionResult> DeleteById([FromRoute] int id) {  
+            var book = await _bookRepository.DeleteAsync(id);
 
             if (book == null)
             {
                 return NotFound();
             }
 
-            _context.Book.Remove(book);
-            _context.SaveChanges();
-
-            return Ok(book);
+            return NoContent();
         }
     }
 }

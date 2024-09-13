@@ -1,89 +1,77 @@
-﻿using BookStore.Models.Context;
-using BookStore.Models;
+﻿using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
+using BookStore.Interfaces;
 
 namespace BookStore.Controllers
 {
     [Route("api/movement")]
     [ApiController]
-    public class MovementController : Controller
+    public class MovementController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IMovementRepository _movementRepository;
 
-        public MovementController(ApplicationDbContext context)
+        public MovementController(IMovementRepository movementRepository)
         {
-            _context = context;
+            _movementRepository = movementRepository;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var movements = _context.Movement.ToList();
+            var movements = await _movementRepository.GetAllAsync();
 
             return Ok(movements);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var movement = _context.Movement.Find(id);
+            var movement = await _movementRepository.GetByIdAsync(id);
 
             if (movement == null)
             {
-                return NotFound();
+                return null;
             }
 
             return Ok(movement);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] MovementModel movementRequest)
+        public async Task<IActionResult> Create([FromBody] MovementModel movementRequest)
         {
             var movement = movementRequest;
 
-            _context.Movement.Add(movement);
-            _context.SaveChanges();
+            await _movementRepository.CreateAsync(movement);
 
             return CreatedAtAction(nameof(GetById), new { id = movement.Id }, movement);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] MovementModel movementRequest)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] MovementModel movementRequest)
         {
-            var movement = _context.Movement.Find(id);
+            var movement = await _movementRepository.UpdateAsync(id, movementRequest);
 
             if (movement == null)
             {
                 return NotFound();
             }
-
-            movement.IdBook = movementRequest.IdBook;
-            movement.IdUser = movementRequest.IdUser;
-            movement.Quantity = movementRequest.Quantity;
-            movement.TotalPrice = movementRequest.TotalPrice;
-            movement.Date = movementRequest.Date;
-
-            _context.SaveChanges();
 
             return Ok(movement);
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult DeleteById([FromRoute] int id)
+        public async Task<IActionResult> DeleteById([FromRoute] int id)
         {
-            var movement = _context.Movement.Find(id);
+            var movement = await _movementRepository.DeleteAsync(id);
 
             if (movement == null)
             {
                 return NotFound();
             }
 
-            _context.Movement.Remove(movement);
-            _context.SaveChanges();
-
-            return Ok(movement);
+            return NoContent();
         }
     }
 }

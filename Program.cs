@@ -1,5 +1,7 @@
 
+using BookStore.Interfaces;
 using BookStore.Models.Context;
+using BookStore.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookStore
@@ -16,6 +18,12 @@ namespace BookStore
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
+
+            builder.Services.AddScoped<IBookRepository, BookRepository>();
+            builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IMovementRepository, MovementRepository>();
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

@@ -1,32 +1,32 @@
-﻿using BookStore.Models.Context;
-using BookStore.Models;
+﻿using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
+using BookStore.Interfaces;
 
 namespace BookStore.Controllers
 {
     [Route("api/author")]
     [ApiController]
-    public class AuthorController : Controller
+    public class AuthorController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IAuthorRepository _authorRepository;
 
-        public AuthorController(ApplicationDbContext context)
+        public AuthorController(IAuthorRepository authorRepository)
         {
-            _context = context;
+            _authorRepository = authorRepository;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var authors = _context.Book.ToList();
+            var authors = await _authorRepository.GetAllAsync();
 
             return Ok(authors);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var author = _context.Author.Find(id);
+            var author = await _authorRepository.GetByIdAsync(id);
 
             if (author == null)
             {
@@ -37,47 +37,39 @@ namespace BookStore.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] AuthorModel authorRequest)
+        public async Task<IActionResult> Create([FromBody] AuthorModel authorRequest)
         {
             var author = authorRequest;
 
-            _context.Author.Add(author);
-            _context.SaveChanges();
+            await _authorRepository.CreateAsync(author);
 
             return CreatedAtAction(nameof(GetById), new { id = author.Id }, author);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] AuthorModel authorRequest)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] AuthorModel authorRequest)
         {
-            var author = _context.Author.Find(id);
+            var author = await _authorRepository.UpdateAsync(id, authorRequest);
 
             if (author == null)
             {
                 return NotFound();
             }
-
-            author.Name = authorRequest.Name;
-
-            _context.SaveChanges();
 
             return Ok(author);
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult DeleteById([FromRoute] int id)
+        public async Task<IActionResult> DeleteById([FromRoute] int id)
         {
-            var author = _context.Author.Find(id);
+            var author = await _authorRepository.DeleteAsync(id);
 
             if (author == null)
             {
                 return NotFound();
             }
-
-            _context.Author.Remove(author);
-            _context.SaveChanges();
 
             return Ok(author);
         }

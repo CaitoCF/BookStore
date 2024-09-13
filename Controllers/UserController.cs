@@ -1,6 +1,6 @@
-﻿using BookStore.Models.Context;
-using BookStore.Models;
+﻿using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
+using BookStore.Interfaces;
 
 namespace BookStore.Controllers
 {
@@ -8,81 +8,70 @@ namespace BookStore.Controllers
     [ApiController]
     public class UserController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUserRepository _userRepository;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(IUserRepository userRepository)
         {
-            _context = context;
+            _userRepository = userRepository;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var users = _context.User.ToList();
+            var users = await _userRepository.GetAllAsync();
 
             return Ok(users);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var user = _context.User.Find(id);
+            var user = await _userRepository.GetByIdAsync(id);
 
             if (user == null)
             {
-                return NotFound();
+                return null;
             }
 
             return Ok(user);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] UserModel userRequest)
+        public async Task<IActionResult> Create([FromBody] UserModel userRequest)
         {
             var user = userRequest;
 
-            _context.User.Add(user);
-            _context.SaveChanges();
+            await _userRepository.CreateAsync(user);
 
             return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] UserModel userRequest)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UserModel userRequest)
         {
-            var user = _context.User.Find(id);
+            var user = await _userRepository.UpdateAsync(id, userRequest);
 
             if (user == null)
             {
                 return NotFound();
             }
-
-            user.Name = userRequest.Name;
-            user.Login = userRequest.Login;
-            user.Password = userRequest.Password;
-            user.Admin = userRequest.Admin;
-
-            _context.SaveChanges();
 
             return Ok(user);
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult DeleteById([FromRoute] int id)
+        public async Task<IActionResult> DeleteById([FromRoute] int id)
         {
-            var user = _context.User.Find(id);
+            var user = await _userRepository.DeleteAsync(id);
 
             if (user == null)
             {
                 return NotFound();
             }
 
-            _context.User.Remove(user);
-            _context.SaveChanges();
-
-            return Ok(user);
+            return NoContent();
         }
     }
 }
